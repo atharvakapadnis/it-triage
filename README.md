@@ -13,7 +13,7 @@ separate MCP server, and the orchestrator synthesizes a single reply.
 
 ## Architecture
 
-See `docs/architecture.png` for the system diagram.
+See `architecture.png` for the system diagram.
 
 ### Why the agents are split this way
 
