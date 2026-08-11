@@ -1,4 +1,9 @@
 import os
+import json
+import logging
+
+logger = logging.getLogger("it_triage")
+
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
@@ -25,12 +30,19 @@ def _mcp_auth_headers(url: str) -> dict:
 
 async def _call_mcp(tool_name: str, args: dict) -> dict:
     """Open a short-lived MCP session, call one tool, return its structured result."""
+    logger.info(json.dumps({"event": "mcp_tool_call", "tool": tool_name, "args": args}))
     headers = _mcp_auth_headers(MCP_SERVER_URL)
     async with streamablehttp_client(MCP_SERVER_URL, headers=headers) as (read, write, _):
         async with ClientSession(read, write) as session:
             await session.initialize()
             result = await session.call_tool(tool_name, args)
-            return result.structuredContent
+            structured = result.structuredContent
+            logger.info(json.dumps({
+                "event": "mcp_tool_result",
+                "tool": tool_name,
+                "status": (structured or {}).get("status"),
+            }))
+            return structured
 
 # LOCAL_MCP_URL = "http://127.0.0.1:8080/mcp"
 
