@@ -8,6 +8,7 @@ APP, USER, SESS = "root", "u_1001", "s1"
 # REQUEST = "My laptop, asset AST-100, keeps freezing up."  # swap to test other domains
 # REQUEST = "I need a Figma license for design work."
 REQUEST = "I can't connect to the VPN, and I also need a Figma license approved for design work."
+# REQUEST = "My laptop, asset AST-404, is completely dead."
 
 async def main():
     sessions = InMemorySessionService()

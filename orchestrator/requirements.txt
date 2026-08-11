@@ -1,2 +1,5 @@
-google-adk
+google-adk==1.38.0
+mcp>=1.28,<2
 python-dotenv
+fastapi
+uvicorn[standard]

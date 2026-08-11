@@ -7,15 +7,40 @@ from mcp.client.streamable_http import streamablehttp_client
 from google.adk.agents import LlmAgent
 from google.adk.tools.agent_tool import AgentTool
 
-LOCAL_MCP_URL = "http://127.0.0.1:8080/mcp"
+MCP_SERVER_URL = os.environ.get("MCP_SERVER_URL", "http://127.0.0.1:8080/mcp")
+
+def _mcp_auth_headers(url: str) -> dict:
+    """Mint a Google ID token for the MCP server when it's a real Cloud Run URL.
+    Local (localhost) needs no auth, so we skip it there."""
+    if "run.app" not in url:
+        return {}
+    import google.auth.transport.requests
+    import google.oauth2.id_token
+    # audience = the MCP service's base URL (scheme+host), NOT the /mcp path
+    audience = url.split("/mcp")[0]
+    req = google.auth.transport.requests.Request()
+    token = google.oauth2.id_token.fetch_id_token(req, audience)
+    return {"Authorization": f"Bearer {token}"}
+
 
 async def _call_mcp(tool_name: str, args: dict) -> dict:
     """Open a short-lived MCP session, call one tool, return its structured result."""
-    async with streamablehttp_client(LOCAL_MCP_URL) as (read, write, _):
+    headers = _mcp_auth_headers(MCP_SERVER_URL)
+    async with streamablehttp_client(MCP_SERVER_URL, headers=headers) as (read, write, _):
         async with ClientSession(read, write) as session:
             await session.initialize()
             result = await session.call_tool(tool_name, args)
             return result.structuredContent
+
+# LOCAL_MCP_URL = "http://127.0.0.1:8080/mcp"
+
+# async def _call_mcp(tool_name: str, args: dict) -> dict:
+#     """Open a short-lived MCP session, call one tool, return its structured result."""
+#     async with streamablehttp_client(LOCAL_MCP_URL) as (read, write, _):
+#         async with ClientSession(read, write) as session:
+#             await session.initialize()
+#             result = await session.call_tool(tool_name, args)
+#             return result.structuredContent
 
 # --- Access domain tools, as plain ADK functions -------------------------
 # Clean signatures + docstrings -> ADK builds simple declarations Gemini won't
